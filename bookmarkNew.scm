@@ -1,5 +1,9 @@
-(import (prefix html-parser hp:))
-(import srfi-1 srfi-69 srfi-13 srfi-14)
+(import (prefix html-parser hp:)
+        srfi-1 srfi-69 srfi-13 srfi-14
+        (chicken process-context)
+        (chicken file)
+        (chicken file posix)
+        getopt-long)
 
 (define (html->alist->stdout filename)
   (define html->txt
@@ -49,3 +53,91 @@
               (lp (cdr lst)))))))
 
   (start-remove))
+
+;; write-hash-table-diff->file :: stirng -> hash-table -> file
+(define (write-hash-table-diff->file filename diff)
+  ;; NOTICE: The terminated here-doc string EOF should be in one line without
+  ;; other charactors, for example `EOF)` is not terminating the here-doc stirng.
+  (define meta #<<EOF
+<!DOCTYPE NETSCAPE-Bookmark-file-1>
+<!-- This is an automatically generated file.
+   It will be read and overwritten.
+   DO NOT EDIT! -->
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'none'; img-src data: *; object-src 'none'"></meta>
+<TITLE>Bookmarks</TITLE>
+<H1>Bookmarks Menu</H1>
+
+<DL><p>
+<DT><H3>Mozilla Firefox</H3>
+<DL><p>
+EOF
+)
+  (with-output-to-file filename
+    (lambda () (display meta)
+      (let lp ((diff-alist (hash-table->alist diff)))
+        (if (null? diff-alist)
+            (void)
+            (begin
+              (let ((link (caar diff-alist))
+                    (desc (cadar diff-alist)))
+                (display "\n<DT><A HREF=\"")
+                (display link)
+                (display "\">")
+                (display desc)
+                (display "</A>"))
+              (lp (cdr diff-alist)))))
+      (display "\n</DL><p>\n</DL>"))
+    #:text))
+
+(define sam1 (alist->hash-table (html->alist->stdout "1.html")))
+(define sam2 (alist->hash-table (html->alist->stdout "2.html")))
+(define diff (hash-table-remove-duplicate sam1 sam2))
+(write-hash-table-diff->file "o1.html" diff)
+
+(define grammar
+  `((input-file-a "Input file a"
+                  (required #t)
+                  (value #t)
+                  (single-char #\a)
+                  (value (required FILE)
+                         (predicate ,string?)))
+    (input-file-b "Input file b"
+                  (required #t)
+                  (value #t)
+                  (single-char #\b)
+                  (value (required FILE)
+                         (predicate ,string?)))
+    (output-file "Output file name"
+                 (required #f)
+                 (value #t)
+                 (single-char #\o)
+                 (value (required FILE)
+                        (predicate ,string?)))))
+
+(define (main)
+  (let* ((options (cdr (parse-command-line-options)))
+         (input-file-a (alist-ref 'input-file-a options))
+         (input-file-b (alist-ref 'input-file-b options))
+         (output-filename (let ((o (alist-ref 'output-file options)))
+                            (cond ((eq? o #f)
+                                   (if (file-exists? "output")
+                                       (error "File `output` exists, select another name via -o flag")
+                                       "output"))
+                                  ((file-exists? o)
+                                   (begin (error "File exists, exiting")
+                                          (exit 1)))
+                                  (else o))))
+         (h1 (alist->hash-table (html->alist->stdout input-file-a)))
+         (h2 (alist->hash-table (html->alist->stdout input-file-b)))
+         (diff (hash-table-remove-duplicate h1 h2)))
+    (write-hash-table-diff->file output-filename diff)))
+
+(define (parse-command-line-options)
+  (condition-case
+    (getopt-long (command-line-arguments)
+                      grammar)
+    ((exn) (begin (print (usage grammar))
+                  (exit 1)))))
+
+(main)
