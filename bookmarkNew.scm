@@ -5,7 +5,7 @@
         (chicken file posix)
         getopt-long)
 
-(define (html->alist->stdout filename)
+(define (html->link-alist filename)
   (define html->txt
     (let* ((links '())
 	     (parse (hp:make-html-parser
@@ -123,8 +123,8 @@ EOF
                                    (begin (error "File exists, exiting")
                                           (exit 1)))
                                   (else o))))
-         (h1 (alist->hash-table (html->alist->stdout input-file-a)))
-         (h2 (alist->hash-table (html->alist->stdout input-file-b)))
+         (h1 (alist->hash-table (html->link-alist input-file-a)))
+         (h2 (alist->hash-table (html->link-alist input-file-b)))
          (diff (hash-table-remove-duplicate h1 h2)))
     (write-hash-table-diff->file output-filename diff)))
 
