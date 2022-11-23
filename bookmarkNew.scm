@@ -90,11 +90,6 @@ EOF
       (display "\n</DL><p>\n</DL>"))
     #:text))
 
-(define sam1 (alist->hash-table (html->alist->stdout "1.html")))
-(define sam2 (alist->hash-table (html->alist->stdout "2.html")))
-(define diff (hash-table-remove-duplicate sam1 sam2))
-(write-hash-table-diff->file "o1.html" diff)
-
 (define grammar
   `((input-file-a "Input file a"
                   (required #t)
