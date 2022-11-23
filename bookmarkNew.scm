@@ -3,6 +3,7 @@
         (chicken process-context)
         (chicken file)
         (chicken file posix)
+        (chicken string)
         getopt-long)
 
 (define (html->link-alist filename)
@@ -117,14 +118,22 @@ EOF
          (output-filename (let ((o (alist-ref 'output-file options)))
                             (cond ((eq? o #f)
                                    (if (file-exists? "output")
-                                       (error "File `output` exists, select another name via -o flag")
+                                       (begin (display "File `output` exists, select another name via -o flag\n"
+                                                       (current-error-port))
+                                              (exit 1))
                                        "output"))
                                   ((file-exists? o)
-                                   (begin (error "File exists, exiting")
+                                   (begin (display "File exists, exiting\n" (current-error-port))
                                           (exit 1)))
                                   (else o))))
-         (h1 (alist->hash-table (html->link-alist input-file-a)))
-         (h2 (alist->hash-table (html->link-alist input-file-b)))
+         (h1 (condition-case
+                 (alist->hash-table (html->link-alist input-file-a))
+               ((exn file) (begin (display (conc "File " input-file-a " does not exit\n"))
+                                  (exit 1)))))
+         (h2 (condition-case
+                 (alist->hash-table (html->link-alist input-file-b))
+               ((exn file) (begin (display (conc "File " input-file-b " does not exit\n"))
+                                  (exit 1)))))
          (diff (hash-table-remove-duplicate h1 h2)))
     (write-hash-table-diff->file output-filename diff)))
 
