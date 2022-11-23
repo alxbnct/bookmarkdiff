@@ -2,10 +2,8 @@
 (import srfi-1 srfi-69 srfi-13 srfi-14)
 
 (define (html->alist->stdout filename)
-  (define links '(#f))
-  (set! links '(#f))
   (define html->txt
-    (let* (
+    (let* ((links '())
 	     (parse (hp:make-html-parser
 	       'start: (lambda (tag attrs seed virtual?)
 			 (when (not (null? attrs))
@@ -23,6 +21,6 @@
 			    (append! (last links) (list text))))))))
       (lambda o
 	(apply parse '() o)
-	(cdr links))))
+	links)))
   (with-input-from-file filename
     (lambda () (html->txt (current-input-port))) #:text))
