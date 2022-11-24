@@ -1,0 +1,17 @@
+((synopsis "A simple tool for extracting new bookmarks from HTMLs exported from Firefox/Chrome")
+ (author "Yosef Weissmann")
+ (license "GPL-2")
+ (category tools)
+ (dependencies
+   html-parser
+   srfi-1
+   srfi-69
+   srfi-13
+   srfi-14
+   srfi-19
+   getopt-long)
+ (components
+ (program bookmarkdiff
+          (source "bookmarkdiff.scm")
+          (csc-options "-d0" "-O2"))
+))
