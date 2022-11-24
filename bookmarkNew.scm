@@ -1,5 +1,6 @@
 (import (prefix html-parser hp:)
         srfi-1 srfi-69 srfi-13 srfi-14
+        srfi-19-date srfi-19-io
         (chicken process-context)
         (chicken file)
         (chicken file posix)
@@ -55,8 +56,15 @@
 
   (start-remove))
 
+(define-syntax dotimes
+  (syntax-rules ()
+    ((_ (index maxval) body ...)
+     (do ((index 0 (+ 1 index)))
+         ((= index maxval))
+       body ...))))
+
 ;; write-hash-table-diff->file :: stirng -> hash-table -> file
-(define (write-hash-table-diff->file filename diff)
+(define (write-hash-table-diff->file filename diff dir)
   ;; NOTICE: The terminated here-doc string EOF should be in one line without
   ;; other charactors, for example `EOF)` is not terminating the here-doc stirng.
   (define meta #<<EOF
@@ -69,26 +77,31 @@
 <TITLE>Bookmarks</TITLE>
 <H1>Bookmarks Menu</H1>
 
-<DL><p>
-<DT><H3>Mozilla Firefox</H3>
-<DL><p>
 EOF
 )
   (with-output-to-file filename
     (lambda () (display meta)
-      (let lp ((diff-alist (hash-table->alist diff)))
-        (if (null? diff-alist)
-            (void)
-            (begin
-              (let ((link (caar diff-alist))
-                    (desc (cadar diff-alist)))
-                (display "\n<DT><A HREF=\"")
-                (display link)
-                (display "\">")
-                (display desc)
-                (display "</A>"))
-              (lp (cdr diff-alist)))))
-      (display "\n</DL><p>\n</DL>"))
+       (if (eq? dir #f)
+         (display (conc "<DL><p>\n<DT><H3>" (format-date "~Y-~m-~d" (current-date))
+                        "</H3>\n<DL><p>\n"))
+         (let ((dir (string-split dir "/")))
+           (let lp ((dir dir))
+             (when (not (eq? dir '()))
+               (display (conc  "<DL><p>\n<DT><H3>" (car dir) "</H3>\n"))
+               (lp (cdr dir))))))
+       (let lp ((diff-alist (hash-table->alist diff)))
+         (if (null? diff-alist)
+             (void)
+             (begin
+               (let ((link (caar diff-alist))
+                     (desc (cadar diff-alist)))
+                 (display (conc "\n<DT><A HREF=\"" link "\">" desc "</A>")))
+               (lp (cdr diff-alist)))))
+       (if (not (eq? dir #f))
+           (let ((dir (string-split dir "/")))
+             (dotimes (i (length dir))
+               (display "\n</DL><p>")))
+         (display "\n</DL><p>\n</DL>\n")))
     #:text))
 
 (define grammar
@@ -109,7 +122,13 @@ EOF
                  (value #t)
                  (single-char #\o)
                  (value (required FILE)
-                        (predicate ,string?)))))
+                        (predicate ,string?)))
+    (directory "Directory for new bookmarks"
+                        (required #f)
+                        (value #t)
+                        (single-char #\d)
+                        (value (required DIR)
+                               (predicate ,string?)))))
 
 (define (main)
   (let* ((options (cdr (parse-command-line-options)))
@@ -117,15 +136,16 @@ EOF
          (input-file-b (alist-ref 'input-file-b options))
          (output-filename (let ((o (alist-ref 'output-file options)))
                             (cond ((eq? o #f)
-                                   (if (file-exists? "output")
-                                       (begin (display "File `output` exists, select another name via -o flag\n"
+                                   (if (file-exists? "output.html")
+                                       (begin (display "File `output.html` exists, select another name via -o flag\n"
                                                        (current-error-port))
                                               (exit 1))
-                                       "output"))
+                                       "output.html"))
                                   ((file-exists? o)
                                    (begin (display "File exists, exiting\n" (current-error-port))
                                           (exit 1)))
                                   (else o))))
+         (directory (alist-ref 'directory options))
          (h1 (condition-case
                  (alist->hash-table (html->link-alist input-file-a))
                ((exn file) (begin (display (conc "File " input-file-a " does not exit\n"))
@@ -135,13 +155,13 @@ EOF
                ((exn file) (begin (display (conc "File " input-file-b " does not exit\n"))
                                   (exit 1)))))
          (diff (hash-table-remove-duplicate h1 h2)))
-    (write-hash-table-diff->file output-filename diff)))
+    (write-hash-table-diff->file output-filename diff directory)))
 
 (define (parse-command-line-options)
   (condition-case
     (getopt-long (command-line-arguments)
                       grammar)
-    ((exn) (begin (print (usage grammar))
+    ((exn) (begin (display (conc "Usage:\n" (usage grammar)))
                   (exit 1)))))
 
 (main)
