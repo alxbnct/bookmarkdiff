@@ -1,9 +1,9 @@
 # Bookmark diff
 
-A simple tool writen in [https://call-cc.org](chicken scheme) for extracting new bookmarks from two html bookmark files exported from Firefox/Chrome.
+A simple tool writen in [chicken scheme](https://call-cc.org) for extracting new bookmarks from two html bookmark files exported from Firefox/Chrome.
 
 ## Build from source
-To build it, you need to install [https://wiki.call-cc.org/platforms](chicken), then run the following commands
+To build it, you need to install [chicken](https://wiki.call-cc.org/platforms), then run the following commands
 ```{sh}
 git clone https://github.com/alxbnct/bookmarkdiff.git
 chicken-install -n
