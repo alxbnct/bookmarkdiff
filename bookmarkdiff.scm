@@ -35,11 +35,7 @@
 ;; hash table and return it
 (define (hash-table-remove-duplicate h1 h2)
   (define (start-remove)
-    (let ((hs1 (hash-table-size h1))
-          (hs2 (hash-table-size h2)))
-      (cond ((= hs1 hs2) (void))
-            ((> hs1 hs2) (remove-dup h1 h2))
-            ((< hs1 hs2) (remove-dup h2 h1)))))
+    (remove-dup h2 h1))
 
   (define (remove-dup larger-ht smaller-ht)
    ;; (let ((ret (hash-table-copy larger-ht))	;This is equivalent as follows.
@@ -132,8 +128,8 @@ EOF
 
 (define (main)
   (let* ((options (cdr (parse-command-line-options)))
-         (input-file-a (alist-ref 'input-file-a options))
-         (input-file-b (alist-ref 'input-file-b options))
+         (input-file-a (alist-ref 'input-file-a options)) ; The target I want to sync to
+         (input-file-b (alist-ref 'input-file-b options)) ; The source to sync
          (output-filename (let ((o (alist-ref 'output-file options)))
                             (cond ((eq? o #f)
                                    (if (file-exists? "output.html")
