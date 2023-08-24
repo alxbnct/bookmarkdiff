@@ -71,17 +71,18 @@
 <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'none'; img-src data: *; object-src 'none'"></meta>
 <TITLE>Bookmarks</TITLE>
-<H1>Bookmarks Menu</H1>
 
 EOF
 )
   (with-output-to-file filename
-    (lambda () (display meta)
+    (lambda ()
+      (display meta)
        (if (eq? dir #f)
          (display (conc "<DL><p>\n<DT><H3>" (format-date "~Y-~m-~d" (current-date))
                         "</H3>\n<DL><p>\n"))
          (let ((dir (string-split dir "/")))
-           (let lp ((dir dir))
+	   (display (conc "<H1>" (car dir) "</H1>\n"))
+           (let lp ((dir (cdr dir)))
              (when (not (eq? dir '()))
                (display (conc  "<DL><p>\n<DT><H3>" (car dir) "</H3>\n"))
                (lp (cdr dir))))))
