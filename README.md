@@ -23,5 +23,5 @@ Usage:
 ## Example
 If you want to put the new bookmarks to a certain directory in the browser, you can use the `-d` flag as follows
 ```{sh}
-./bookmarkdiff -a bookmark1.html -b bookmark2.html -d /path/you/want/it/to/be
+./bookmarkdiff -a bookmarks_firefox.html -b bookmarks_chrome_2023_8_24.html  -o diff8.html -d "Bookmarks Menu/Other Bookmarks/Chrome/2023-08-24"
 ```

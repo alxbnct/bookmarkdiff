@@ -20,11 +20,20 @@
 	       'end: (lambda (tag attrs pseed seed virtual?) seed)
 	       'text: (lambda (text seed)
 			(when (not (null? links))
-			  (when (and (not (eq? (last links) #f))
-				     (not (string=? ""
-						    (string-trim-right text
-						     (or char-set:whitespace #\newline #\tab)))))
-			    (append! (last links) (list text))))))))
+			  (let ((trimed-text (string-trim-right text
+								(or char-set:whitespace #\newline #\tab))))
+			    (cond ((and (not (eq? (last links) #f))
+					(not (string=? "" trimed-text)))
+				   (append! (last links) (list text)))
+				  ((and (string=? "" trimed-text)
+					(= (length (last links)) 1))
+				   (append! (last links) (list "Untitled")))))
+			  #;
+			  (when (and (not (eq? (last links) #f)) ;
+			  (not (string=? "" ;
+			  (string-trim-right text ;
+			  (or char-set:whitespace #\newline #\tab))))) ;
+			  (append! (last links) (list text))))))))
       (lambda o
 	(apply parse '() o)
 	links)))
